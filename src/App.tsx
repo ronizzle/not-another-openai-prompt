@@ -1,33 +1,51 @@
-import React, { useState } from 'react';
-import { questionAndAnswerType } from './api/types';
-import apiClient from './api/client';
-import Header from './components/commons/Header';
-import Prompt from './components/commons/Prompt';
-import Results from './components/commons/Results';
-import './App.css';
+import React, { useState } from "react";
+import { questionAndAnswerType } from "./api/types";
+import Header from "./components/commons/Header";
+import Prompt from "./components/commons/Prompt";
+import Results from "./components/commons/Results";
+import "./App.css";
 
 const App = () => {
-  const [questionsAndAnswers, setQuestionsAndAnswers] = useState<
-    questionAndAnswerType[]
-  >([]);
+  const [questionsAndAnswers, setQuestionsAndAnswers] = useState<questionAndAnswerType[]>([]);
   const [questionText, setQuestionText] = useState("");
-  const [isPromptButtonEnabled, setIsPromptButtonEnabled] =
-    useState<boolean>(true);
+  const [isPromptButtonEnabled, setIsPromptButtonEnabled] = useState<boolean>(true);
+  const [tempQuestion, setTempQuestion] = useState<string | null>(null);
+  const [tempAnswer, setTempAnswer] = useState<string | null>(null);
 
-  const promptClicked = (question: string) => {
-    apiClient
-      .get(`ask?question=${question}`)
-      .then((response) => {
-        setQuestionsAndAnswers([
-          ...questionsAndAnswers,
-          { answer: response.data.answer, question: question },
-        ]);
-      })
-      .catch((error) => console.error(error))
-      .finally(() => {
-        setIsPromptButtonEnabled(true);
-        setQuestionText("");
-      });
+  const promptClicked = async (question: string) => {
+    const response = await fetch(
+      `http://127.0.0.1:8000/ask-realtime?question=${question}`,
+    );
+
+    if (!response.body) {
+      throw new Error("ReadableStream not supported");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let done = false;
+    let answer = "";
+    setTempQuestion(question);
+
+    while (!done) {
+      const { value, done: doneReading } = await reader.read();
+      done = doneReading;
+      const chunk = decoder.decode(value, { stream: true });
+      answer = `${answer} ${chunk}`;
+      setTempAnswer(answer);
+    }
+
+    if (done) {
+      setQuestionsAndAnswers([
+        ...questionsAndAnswers,
+        { answer: answer, question: question },
+      ]);
+
+      setIsPromptButtonEnabled(true);
+      setQuestionText("");
+      setTempAnswer(null);
+      setTempAnswer(null);
+    }
   };
 
   return (
@@ -40,7 +58,11 @@ const App = () => {
         questionText={questionText}
         setQuestionText={setQuestionText}
       ></Prompt>
-      <Results questionsAndAnswers={questionsAndAnswers}></Results>
+      <Results
+        tempQuestion={tempQuestion}
+        tempAnswer={tempAnswer}
+        questionsAndAnswers={questionsAndAnswers}
+      ></Results>
     </div>
   );
 };

@@ -1,11 +1,20 @@
 import React from "react";
 
-const Results = () => {
-    return (
-        <div>
-            <h3>Results here</h3>
-        </div>
-    );
+interface ResultsProps {
+  questionsAndAnswers: string[];
 }
+
+const Results: React.FC<ResultsProps> = ({ questionsAndAnswers }) => {
+  return (
+    <div className={"App-results"}>
+      <h3>Answers:</h3>
+      <ul>
+        {questionsAndAnswers.map((result, index) => {
+          return <li key={index}>{result}</li>;
+        })}
+      </ul>
+    </div>
+  );
+};
 
 export default Results;

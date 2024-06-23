@@ -1,18 +1,31 @@
-import React from "react";
+import React from 'react';
+import { questionAndAnswerType } from '../../api/types';
 
 interface ResultsProps {
-  questionsAndAnswers: string[];
+  questionsAndAnswers: questionAndAnswerType[];
 }
 
 const Results: React.FC<ResultsProps> = ({ questionsAndAnswers }) => {
   return (
     <div className={"App-results"}>
-      <h3>Answers:</h3>
-      <ul>
-        {questionsAndAnswers.map((result, index) => {
-          return <li key={index}>{result}</li>;
+      {questionsAndAnswers
+        .slice()
+        .reverse()
+        .map((questionsAndAnswer, index) => {
+          return (
+            <>
+              <div className={"result-box"} key={index}>
+                <div className={"result-box-question"}>
+                  {questionsAndAnswer.question}
+                </div>
+                <div>--</div>
+                <div className={"result-box-answer"}>
+                  {questionsAndAnswer.answer}
+                </div>
+              </div>
+            </>
+          );
         })}
-      </ul>
     </div>
   );
 };
